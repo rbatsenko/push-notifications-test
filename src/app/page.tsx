@@ -7,6 +7,10 @@ const isIOS = () =>
   typeof window !== "undefined" &&
   /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
 
+const isPWA = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(display-mode: standalone)").matches;
+
 export default function Home() {
   const [permission, setPermission] =
     useState<NotificationPermission>("default");
@@ -20,9 +24,9 @@ export default function Home() {
       try {
         if (typeof window === "undefined") return;
 
-        // Early return for iOS with specific message
-        if (isIOS()) {
-          setError("Push notifications are not supported on iOS devices");
+        // For iOS, only enable notifications in PWA mode
+        if (isIOS() && !isPWA()) {
+          setError("Please install this app to enable notifications");
           setIsSupported(false);
           return;
         }
@@ -103,13 +107,14 @@ export default function Home() {
             marginBottom: "1rem",
           }}
         >
-          {isIOS() ? "Not Supported" : "Error"}
+          {isIOS() && !isPWA() ? "Install Required" : "Error"}
         </h1>
         <p style={{ color: "#ef4444" }}>{error}</p>
-        {isIOS() && (
+        {isIOS() && !isPWA() && (
           <p style={{ marginTop: "1rem" }}>
-            While you can install this app on your home screen, iOS does not
-            support web push notifications at this time.
+            To enable notifications on iOS, please install this app to your home
+            screen first. Look for the &quot;Add to Home Screen&quot; option in
+            your browser&apos;s menu.
           </p>
         )}
       </main>

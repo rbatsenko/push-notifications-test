@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 
 interface SafariNavigator extends Navigator {
@@ -7,8 +9,11 @@ interface SafariNavigator extends Navigator {
 export default function IOSInstallPrompt() {
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+
     // Check if the device is iOS
     const ios = /iphone|ipad|ipod/.test(
       window.navigator.userAgent.toLowerCase()
@@ -21,6 +26,11 @@ export default function IOSInstallPrompt() {
     setIsIOS(ios);
     setIsStandalone(standalone);
   }, []);
+
+  // Don't render anything until after mounting to avoid hydration issues
+  if (!isMounted) {
+    return null;
+  }
 
   if (!isIOS || isStandalone) {
     return null;

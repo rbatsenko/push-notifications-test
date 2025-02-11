@@ -18,6 +18,7 @@ export default function Home() {
     useState<ServiceWorkerRegistration | null>(null);
   const [error, setError] = useState<string>("");
   const [isSupported, setIsSupported] = useState(false);
+  const [swState, setSwState] = useState<string>("unknown");
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -52,12 +53,21 @@ export default function Home() {
 
         // Register Service Worker and ensure it's active
         const reg = await navigator.serviceWorker.register("/sw.js");
+        setSwState(reg.active ? "active" : "waiting");
+
         if (!reg.active) {
           // Wait for the service worker to activate
           await new Promise((resolve) => {
-            reg.addEventListener("activate", () => resolve(true), {
-              once: true,
-            });
+            reg.addEventListener(
+              "activate",
+              () => {
+                setSwState("active");
+                resolve(true);
+              },
+              {
+                once: true,
+              }
+            );
           });
         }
         setRegistration(reg);
@@ -146,6 +156,7 @@ export default function Home() {
         ) : (
           <>
             <p>Notification Permission: {permission}</p>
+            <p>Service Worker State: {swState}</p>
 
             {permission === "default" && (
               <button onClick={requestPermission}>
@@ -154,8 +165,15 @@ export default function Home() {
             )}
 
             {permission === "granted" && (
-              <button onClick={showNotification} disabled={!registration}>
+              <button
+                onClick={showNotification}
+                disabled={!registration?.active}
+                style={{
+                  opacity: registration?.active ? 1 : 0.5,
+                }}
+              >
                 Show Local Notification
+                {!registration?.active && " (Waiting for Service Worker)"}
               </button>
             )}
 

@@ -92,7 +92,22 @@ export default function Home() {
     };
 
     initializeApp();
-  }, []);
+
+    // Set up periodic service worker updates
+    const updateInterval = setInterval(async () => {
+      try {
+        if (registration) {
+          await registration.update();
+        }
+      } catch (err) {
+        console.error("Error updating service worker:", err);
+      }
+    }, 60 * 60 * 1000); // Check for updates every hour
+
+    return () => {
+      clearInterval(updateInterval);
+    };
+  }, [registration]);
 
   const requestPermission = async () => {
     try {

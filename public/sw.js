@@ -9,6 +9,10 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+
   if (event.data && event.data.type === "SHOW_NOTIFICATION") {
     self.registration.showNotification("Notification Demo", {
       body: event.data.message,

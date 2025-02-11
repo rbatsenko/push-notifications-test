@@ -55,15 +55,29 @@ export default function Home() {
         const reg = await navigator.serviceWorker.register("/sw.js");
         setSwState(reg.active ? "active" : "waiting");
 
+        if (reg.waiting) {
+          // If there's a waiting worker, activate it immediately
+          reg.waiting.postMessage({ type: "SKIP_WAITING" });
+        }
+
         if (!reg.active) {
           // Wait for the service worker to activate
           await new Promise((resolve) => {
-            reg.addEventListener(
-              "activate",
-              () => {
+            // Listen for state changes
+            const handleStateChange = () => {
+              if (reg.active) {
                 setSwState("active");
                 resolve(true);
-              },
+              }
+            };
+
+            // Check immediately
+            handleStateChange();
+
+            // Also listen for the controlling change
+            navigator.serviceWorker.addEventListener(
+              "controllerchange",
+              handleStateChange,
               {
                 once: true,
               }

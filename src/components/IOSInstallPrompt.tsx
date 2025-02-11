@@ -38,7 +38,7 @@ export default function IOSInstallPrompt() {
         <div>
           <p style={{ fontWeight: "500" }}>Install this app on your iPhone</p>
           <p style={{ fontSize: "0.875rem", color: "#4b5563" }}>
-            Tap the share button then "Add to Home Screen"
+            Tap the share button then &quot;Add to Home Screen&quot;
           </p>
         </div>
         <button

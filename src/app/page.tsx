@@ -53,40 +53,29 @@ export default function Home() {
 
         // Register Service Worker and ensure it's active
         const reg = await navigator.serviceWorker.register("/sw.js");
-        setSwState(reg.active ? "active" : "waiting");
 
-        // Force activation of any waiting or installing worker
+        // Handle initial state
         const sw = reg.installing || reg.waiting || reg.active;
         if (sw) {
-          sw.postMessage({ type: "SKIP_WAITING" });
+          setSwState(sw.state);
 
-          // Force a reload to ensure the new service worker takes control
-          if (reg.waiting) {
-            window.location.reload();
-          }
-        }
-
-        if (!reg.active) {
-          // Wait for the service worker to activate
-          await new Promise((resolve) => {
-            const handleStateChange = (state: string) => {
-              setSwState(state);
-              if (state === "active") {
-                resolve(true);
-              }
-            };
-
-            navigator.serviceWorker.addEventListener("controllerchange", () => {
-              handleStateChange("active");
-            });
-
-            if (sw) {
-              sw.addEventListener("statechange", () => {
-                handleStateChange(sw.state);
+          // Listen for state changes
+          sw.addEventListener("statechange", () => {
+            setSwState(sw.state);
+            if (sw.state === "redundant") {
+              // If service worker becomes redundant, try re-registering
+              navigator.serviceWorker.register("/sw.js").then((newReg) => {
+                setRegistration(newReg);
+                setSwState(newReg.active ? "active" : "installing");
               });
             }
           });
         }
+
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: "SKIP_WAITING" });
+        }
+
         setRegistration(reg);
       } catch (err) {
         console.error("Error initializing app:", err);
@@ -110,7 +99,7 @@ export default function Home() {
     return () => {
       clearInterval(updateInterval);
     };
-  }, [registration]);
+  }, []);
 
   const requestPermission = async () => {
     try {

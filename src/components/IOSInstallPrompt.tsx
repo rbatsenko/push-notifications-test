@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 
+interface SafariNavigator extends Navigator {
+  standalone?: boolean;
+}
+
 export default function IOSInstallPrompt() {
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -11,7 +15,8 @@ export default function IOSInstallPrompt() {
     );
 
     // Check if the app is already installed (running in standalone mode)
-    const standalone = window.navigator.standalone === true;
+    const nav = window.navigator as SafariNavigator;
+    const standalone = nav.standalone === true;
 
     setIsIOS(ios);
     setIsStandalone(standalone);

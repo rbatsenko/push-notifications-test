@@ -52,9 +52,7 @@ export default function Home() {
         }
 
         // Register Service Worker and ensure it's active
-        const reg = await navigator.serviceWorker.register("/sw.js", {
-          immediate: true,
-        });
+        const reg = await navigator.serviceWorker.register("/sw.js");
         setSwState(reg.active ? "active" : "waiting");
 
         // Force activation of any waiting or installing worker

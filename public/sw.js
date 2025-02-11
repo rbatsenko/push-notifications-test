@@ -1,11 +1,19 @@
 /// <reference lib="webworker" />
 
 self.addEventListener("install", (event) => {
-  self.skipWaiting();
+  event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(clients.claim());
+  event.waitUntil(
+    Promise.all([
+      self.clients.claim(),
+      // Clear any old caches if they exist
+      caches
+        .keys()
+        .then((keys) => Promise.all(keys.map((key) => caches.delete(key)))),
+    ])
+  );
 });
 
 self.addEventListener("message", (event) => {

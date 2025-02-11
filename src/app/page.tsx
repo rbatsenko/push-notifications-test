@@ -52,36 +52,41 @@ export default function Home() {
         }
 
         // Register Service Worker and ensure it's active
-        const reg = await navigator.serviceWorker.register("/sw.js");
+        const reg = await navigator.serviceWorker.register("/sw.js", {
+          immediate: true,
+        });
         setSwState(reg.active ? "active" : "waiting");
 
-        if (reg.waiting) {
-          // If there's a waiting worker, activate it immediately
-          reg.waiting.postMessage({ type: "SKIP_WAITING" });
+        // Force activation of any waiting or installing worker
+        const sw = reg.installing || reg.waiting || reg.active;
+        if (sw) {
+          sw.postMessage({ type: "SKIP_WAITING" });
+
+          // Force a reload to ensure the new service worker takes control
+          if (reg.waiting) {
+            window.location.reload();
+          }
         }
 
         if (!reg.active) {
           // Wait for the service worker to activate
           await new Promise((resolve) => {
-            // Listen for state changes
-            const handleStateChange = () => {
-              if (reg.active) {
-                setSwState("active");
+            const handleStateChange = (state: string) => {
+              setSwState(state);
+              if (state === "active") {
                 resolve(true);
               }
             };
 
-            // Check immediately
-            handleStateChange();
+            navigator.serviceWorker.addEventListener("controllerchange", () => {
+              handleStateChange("active");
+            });
 
-            // Also listen for the controlling change
-            navigator.serviceWorker.addEventListener(
-              "controllerchange",
-              handleStateChange,
-              {
-                once: true,
-              }
-            );
+            if (sw) {
+              sw.addEventListener("statechange", () => {
+                handleStateChange(sw.state);
+              });
+            }
           });
         }
         setRegistration(reg);

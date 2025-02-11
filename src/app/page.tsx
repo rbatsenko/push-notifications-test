@@ -50,8 +50,16 @@ export default function Home() {
           setPermission(Notification.permission);
         }
 
-        // Register Service Worker
+        // Register Service Worker and ensure it's active
         const reg = await navigator.serviceWorker.register("/sw.js");
+        if (!reg.active) {
+          // Wait for the service worker to activate
+          await new Promise((resolve) => {
+            reg.addEventListener("activate", () => resolve(true), {
+              once: true,
+            });
+          });
+        }
         setRegistration(reg);
       } catch (err) {
         console.error("Error initializing app:", err);

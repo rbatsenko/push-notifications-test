@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import IOSInstallPrompt from "../components/IOSInstallPrompt";
 
+const isIOS = () =>
+  typeof window !== "undefined" &&
+  /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+
 export default function Home() {
   const [permission, setPermission] =
     useState<NotificationPermission>("default");
@@ -15,6 +19,13 @@ export default function Home() {
     const initializeApp = async () => {
       try {
         if (typeof window === "undefined") return;
+
+        // Early return for iOS with specific message
+        if (isIOS()) {
+          setError("Push notifications are not supported on iOS devices");
+          setIsSupported(false);
+          return;
+        }
 
         // Check if notifications are supported
         if (!("Notification" in window)) {
@@ -30,10 +41,9 @@ export default function Home() {
           return;
         }
 
-        // Request notification permission only if supported
+        // Get current permission status
         if ("Notification" in window) {
-          const perm = await Notification.requestPermission();
-          setPermission(perm);
+          setPermission(Notification.permission);
         }
 
         // Register Service Worker
@@ -47,6 +57,18 @@ export default function Home() {
 
     initializeApp();
   }, []);
+
+  const requestPermission = async () => {
+    try {
+      const perm = await Notification.requestPermission();
+      setPermission(perm);
+    } catch (err) {
+      console.error("Error requesting permission:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to request permission"
+      );
+    }
+  };
 
   const showNotification = async () => {
     try {
@@ -81,13 +103,13 @@ export default function Home() {
             marginBottom: "1rem",
           }}
         >
-          Error
+          {isIOS() ? "Not Supported" : "Error"}
         </h1>
         <p style={{ color: "#ef4444" }}>{error}</p>
-        {!isSupported && (
+        {isIOS() && (
           <p style={{ marginTop: "1rem" }}>
-            Note: Push notifications are not supported on iOS Safari. Please use
-            a different browser or platform to test this feature.
+            While you can install this app on your home screen, iOS does not
+            support web push notifications at this time.
           </p>
         )}
       </main>
@@ -112,16 +134,22 @@ export default function Home() {
           <>
             <p>Notification Permission: {permission}</p>
 
-            <button
-              onClick={showNotification}
-              disabled={!registration || permission !== "granted"}
-            >
-              Show Local Notification
-            </button>
+            {permission === "default" && (
+              <button onClick={requestPermission}>
+                Request Notification Permission
+              </button>
+            )}
 
-            {permission !== "granted" && (
+            {permission === "granted" && (
+              <button onClick={showNotification} disabled={!registration}>
+                Show Local Notification
+              </button>
+            )}
+
+            {permission === "denied" && (
               <p className="error-text">
-                Please allow notifications permission to test this feature
+                Notifications are blocked. Please enable them in your browser
+                settings.
               </p>
             )}
           </>
